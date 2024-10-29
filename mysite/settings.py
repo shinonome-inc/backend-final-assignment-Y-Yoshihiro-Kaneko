@@ -131,3 +131,4 @@ AUTH_USER_MODEL = "accounts.User"
 
 LOGIN_URL = reverse_lazy("accounts:login")
 LOGIN_REDIRECT_URL = reverse_lazy("tweets:home")
+LOGOUT_REDIRECT_URL = reverse_lazy("accounts:login")

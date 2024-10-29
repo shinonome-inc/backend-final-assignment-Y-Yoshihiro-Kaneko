@@ -13,6 +13,11 @@
                 <li><a href="{% url 'welcome:welcome' %}">Twitter Clone</a></li>
                 <li><a href="{% url 'accounts:signup' %}">Sign up</a></li>
                 <li><a href="{% url 'accounts:login' %}">Login</a></li>
+                <li>
+                    <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}
+                        <button type="submit">Logout</button>
+                    </form>
+                </li>
             </ul>
         </nav>
     </header>
