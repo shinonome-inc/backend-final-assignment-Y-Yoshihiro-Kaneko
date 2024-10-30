@@ -80,8 +80,20 @@ class TestTweetCreateView(TestCase):
         self.assertEqual(len(Tweet.objects.all()), 0)
 
 
-# class TestTweetDetailView(TestCase):
-#     def test_success_get(self):
+class TestTweetDetailView(TestCase):
+    def test_success_get(self):
+        user = User.objects.create_user(
+            username="testuser",
+            email="testuser@example.com",
+            password="asdf!@#$1234",
+        )
+        self.client.force_login(user)
+        tweet = Tweet.objects.create(user=user, body="This is test Tweet.")
+
+        response = self.client.get(reverse("tweets:detail", kwargs={"pk": tweet.pk}))
+        self.assertContains(response, tweet.body, count=1, status_code=200)
+        self.assertTemplateUsed(response, "tweets/detail.html")
+        self.assertQuerysetEqual([response.context["object"]], [tweet])
 
 
 # class TestTweetDeleteView(TestCase):
