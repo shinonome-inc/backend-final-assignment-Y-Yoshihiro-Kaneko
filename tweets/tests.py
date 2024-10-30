@@ -96,12 +96,48 @@ class TestTweetDetailView(TestCase):
         self.assertQuerysetEqual([response.context["object"]], [tweet])
 
 
-# class TestTweetDeleteView(TestCase):
-#     def test_success_post(self):
+class TestTweetDeleteView(TestCase):
+    def setUp(self):
+        self.url = lambda pk: reverse("tweets:delete", kwargs={"pk": pk})
+        self.user1 = User.objects.create_user(
+            username="user1",
+            email="user1@example.com",
+            password="asdfg!@#$%12345",
+        )
+        self.tweet1 = Tweet.objects.create(user=self.user1, body="tweet of user1")
 
-#     def test_failure_post_with_not_exist_tweet(self):
+        self.user2 = User.objects.create_user(
+            username="user2",
+            email="user2@example.com",
+            password="asdfg!@#$%12345",
+        )
+        self.tweet2 = Tweet.objects.create(user=self.user2, body="tweet of user2")
 
-#     def test_failure_post_with_incorrect_user(self):
+    def test_success_post(self):
+        self.client.force_login(self.user1)
+        response = self.client.post(self.url(1))
+
+        self.assertRedirects(
+            response,
+            reverse("tweets:home"),
+            status_code=302,
+            target_status_code=200,
+        )
+        self.assertFalse(Tweet.objects.filter(pk=1).exists())
+
+    def test_failure_post_with_not_exist_tweet(self):
+        self.client.force_login(self.user1)
+        response = self.client.post(self.url(100))
+
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(len(Tweet.objects.all()), 2)
+
+    def test_failure_post_with_incorrect_user(self):
+        self.client.force_login(self.user1)
+        response = self.client.post(self.url(2))
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(len(Tweet.objects.all()), 2)
 
 
 # class TestLikeView(TestCase):
