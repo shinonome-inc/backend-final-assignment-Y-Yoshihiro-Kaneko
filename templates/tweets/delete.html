@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}New Tweet{% endblock %}
+
+{% block content %}
+<h2>削除しようとしているツイート</h2>
+投稿日 {{ tweet.created_at }}
+{{ tweet.body }}
+
+<form method="post">{% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit"><strong>ツイートを削除する</strong></button>
+</form>
+{% endblock %}

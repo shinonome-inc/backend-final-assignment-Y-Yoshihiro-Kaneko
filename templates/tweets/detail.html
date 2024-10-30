@@ -6,4 +6,5 @@
 <p>user: {{ object.user.username }}</p>
 <p>post date: {{ object.created_at }}</p>
 <p>{{ object.body }}</p>
+<a href="{% url 'tweets:delete' pk=object.pk %}">削除する</a>
 {% endblock %}
