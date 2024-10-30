@@ -1,7 +1,7 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponseRedirect
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, TemplateView
+from django.views.generic import CreateView, DetailView, TemplateView
 
 from tweets.models import Tweet
 
@@ -22,3 +22,8 @@ class TweetCreateView(LoginRequiredMixin, CreateView):
         tweet.save()
         self.object = tweet
         return HttpResponseRedirect(self.get_success_url())
+
+
+class TweetDetailView(LoginRequiredMixin, DetailView):
+    template_name = "tweets/detail.html"
+    model = Tweet
