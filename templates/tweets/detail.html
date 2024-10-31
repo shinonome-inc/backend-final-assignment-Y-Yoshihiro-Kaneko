@@ -3,8 +3,8 @@
 {% block title %}Tweet{% endblock %}
 
 {% block content %}
-<p>user: {{ object.user.username }}</p>
+<h1><a href="{{ tweet.user.get_absolute_url }}">{{ object.user.username }}</a>のツイート</h1>
 <p>post date: {{ object.created_at }}</p>
-<p>{{ object.body }}</p>
+<p>{{ object.body|linebreaks }}</p>
 <a href="{% url 'tweets:delete' pk=object.pk %}">削除する</a>
 {% endblock %}
