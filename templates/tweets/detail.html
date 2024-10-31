@@ -6,5 +6,7 @@
 <h1><a href="{{ tweet.user.get_absolute_url }}">{{ object.user.username }}</a>のツイート</h1>
 <p>post date: {{ object.created_at }}</p>
 <p>{{ object.body|linebreaks }}</p>
+{% if object.user.pk == user.pk %}
 <a href="{% url 'tweets:delete' pk=object.pk %}">削除する</a>
+{% endif %}
 {% endblock %}
