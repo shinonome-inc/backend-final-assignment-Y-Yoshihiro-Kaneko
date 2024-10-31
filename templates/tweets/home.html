@@ -4,4 +4,12 @@
 
 {% block content %}
 <h1>Home画面</h1>
+{% for tweet in tweet_list %}
+<div>
+    <p>{{ tweet.user.username }}によるツイート、投稿日 {{ tweet.created_at }}</p>
+    <p>{{ tweet.body }}</p>
+</div>
+{% empty %}
+<p>最初のツイートをしよう！</p>
+{% endfor %}
 {% endblock %}

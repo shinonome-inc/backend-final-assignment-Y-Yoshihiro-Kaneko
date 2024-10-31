@@ -1,13 +1,14 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.http import HttpResponseRedirect
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, DeleteView, DetailView, TemplateView
+from django.views.generic import CreateView, DeleteView, DetailView, ListView
 
 from tweets.models import Tweet
 
 
-class HomeView(LoginRequiredMixin, TemplateView):
+class HomeView(LoginRequiredMixin, ListView):
     template_name = "tweets/home.html"
+    queryset = Tweet.objects.select_related("user").order_by("-created_at")
 
 
 class TweetCreateView(LoginRequiredMixin, CreateView):
