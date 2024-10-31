@@ -9,6 +9,18 @@ User = get_user_model()
 
 class TestHomeView(TestCase):
     def test_success_get(self):
+        # テストデータ準備
+        for user_index in range(3):
+            user = User.objects.create_user(
+                username=f"user{user_index}",
+                email=f"user{user_index}@example.com",
+                password="asdfg!@#$%12345",
+            )
+
+            for tweet_index in range(3):
+                Tweet.objects.create(user=user, body=f"tweet{tweet_index} of user{user_index}")
+        all_tweets = Tweet.objects.select_related("user").order_by("-created_at").all()
+
         user = User.objects.create_user(
             username="testuser",
             email="testuser@example.com",
@@ -17,8 +29,9 @@ class TestHomeView(TestCase):
         self.client.force_login(user)
 
         response = self.client.get(reverse("tweets:home"))
-        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "によるツイート", count=len(all_tweets), status_code=200)
         self.assertTemplateUsed(response, "tweets/home.html")
+        self.assertQuerySetEqual(response.context["tweet_list"], all_tweets)
 
 
 class TestTweetCreateView(TestCase):
