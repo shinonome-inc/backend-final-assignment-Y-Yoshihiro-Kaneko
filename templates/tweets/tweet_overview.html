@@ -1,0 +1,6 @@
+<div>
+    <h2><a href="{{ tweet.user.get_absolute_url }}">{{ tweet.user.username }}</a>によるツイート</h2>
+    <div>投稿日 {{ tweet.created_at }}</div>
+    <p>{{ tweet.body|truncatechars:30 }}</p>
+    <a href="{{ tweet.get_absolute_url }}">詳細をみる</a>
+</div>

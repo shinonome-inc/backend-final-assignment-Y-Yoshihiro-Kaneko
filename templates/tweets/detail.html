@@ -3,8 +3,8 @@
 {% block title %}Tweet{% endblock %}
 
 {% block content %}
-<h1><a href="{{ tweet.user.get_absolute_url }}">{{ tweet.user.username }}</a>のツイート</h1>
-<p>post date: {{ tweet.created_at }}</p>
+<h1><a href="{{ tweet.user.get_absolute_url }}">{{ tweet.user.username }}</a>によるツイート</h1>
+<div>投稿日 {{ tweet.created_at }}</div>
 <p>{{ tweet.body|linebreaks }}</p>
 {% if tweet.user.pk == user.pk %}
 <a href="{% url 'tweets:delete' pk=tweet.pk %}">削除する</a>

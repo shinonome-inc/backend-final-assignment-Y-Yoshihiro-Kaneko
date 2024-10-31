@@ -5,12 +5,7 @@
 {% block content %}
 <h1>Home画面</h1>
 {% for tweet in tweet_list %}
-<div>
-    <h2>{{ tweet.user.username }}によるツイート</h2>
-    <div>投稿日 {{ tweet.created_at }}</div>
-    <p>{{ tweet.body|truncatechars:30 }}</p>
-    <a href="{{ tweet.get_absolute_url }}">詳細をみる</a>
-</div>
+{% include "tweets/tweet_overview.html" %}
 {% empty %}
 <p>最初のツイートをしよう！</p>
 {% endfor %}
