@@ -17,6 +17,11 @@
         {% endif %}
     {% endif %}
 
+    <div>
+        <a href="{% url 'accounts:following_list' username=user_profile.username %}">フォロー中</a>
+        <a href="{% url 'accounts:follower_list' username=user_profile.username %}">フォロワー</a>
+    </div>
+
     {% for tweet in tweets %}
         {% include "tweets/tweet_overview.html" %}
     {% empty %}

@@ -87,3 +87,45 @@ class UnFollowView(LoginRequiredMixin, SingleObjectMixin, View):
         request.user.following.remove(target_user)
         request.user.save()
         return HttpResponseRedirect(self.next_page)
+
+
+class FollowingListView(LoginRequiredMixin, DetailView):
+    template_name = "accounts/following_list.html"
+    model = User
+    slug_field = "username"
+    slug_url_kwarg = "username"
+    context_object_name = "target_user"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        target_user = context[self.context_object_name]
+        friend_ships = (
+            target_user.following.through.objects.filter(
+                follower=target_user,
+            )
+            .select_related("followee")
+            .order_by("-created_at")
+        )
+        context["following_list"] = [(friend_ship.followee, friend_ship.created_at) for friend_ship in friend_ships]
+        return context
+
+
+class FollowerListView(LoginRequiredMixin, DetailView):
+    template_name = "accounts/follower_list.html"
+    model = User
+    slug_field = "username"
+    slug_url_kwarg = "username"
+    context_object_name = "target_user"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        target_user = context[self.context_object_name]
+        friend_ships = (
+            target_user.followers.through.objects.filter(
+                followee=target_user,
+            )
+            .select_related("follower")
+            .order_by("-created_at")
+        )
+        context["follower_list"] = [(friend_ship.follower, friend_ship.created_at) for friend_ship in friend_ships]
+        return context
