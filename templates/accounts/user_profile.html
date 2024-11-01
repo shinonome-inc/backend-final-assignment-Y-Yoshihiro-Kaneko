@@ -3,12 +3,23 @@
 {% block title %}Profile{% endblock %}
 
 {% block content %}
-<h1>{{ user_profile.username }}</h1>
+    <h1>{{ user_profile.username }}</h1>
 
-{% for tweet in tweets %}
-{% include "tweets/tweet_overview.html" %}
-{% empty %}
-<p>まだツイートはありません</p>
-{% endfor %}
+    {% if user_profile != user %}
+        {% if is_following %}
+            <form method="post" action="{% url 'accounts:unfollow' username=user_profile.username %}">{% csrf_token %}
+                <button type="submit">フォロー解除</button>
+            </form>
+        {% else %}
+            <form method="post" action="{% url 'accounts:follow' username=user_profile.username %}">{% csrf_token %}
+                <button type="submit">フォロー</button>
+            </form>
+        {% endif %}
+    {% endif %}
 
+    {% for tweet in tweets %}
+        {% include "tweets/tweet_overview.html" %}
+    {% empty %}
+        <p>まだツイートはありません</p>
+    {% endfor %}
 {% endblock %}
