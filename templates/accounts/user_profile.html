@@ -18,8 +18,12 @@
     {% endif %}
 
     <div>
-        <a href="{% url 'accounts:following_list' username=user_profile.username %}">フォロー中</a>
-        <a href="{% url 'accounts:follower_list' username=user_profile.username %}">フォロワー</a>
+        <a href="{% url 'accounts:following_list' username=user_profile.username %}">
+            {{ following_count }} フォロー中
+        </a>
+        <a href="{% url 'accounts:follower_list' username=user_profile.username %}">
+            {{ followers_count }} フォロワー
+        </a>
     </div>
 
     {% for tweet in tweets %}
