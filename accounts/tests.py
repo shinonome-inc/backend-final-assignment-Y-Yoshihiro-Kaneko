@@ -3,6 +3,7 @@ from django.contrib.auth import SESSION_KEY, get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
+from accounts.models import FriendShip
 from tweets.models import Tweet
 
 User = get_user_model()
@@ -344,12 +345,45 @@ class TestUserProfileView(TestCase):
 #     def test_failure_post_with_incorrect_user(self):
 
 
-# class TestFollowView(TestCase):
-#     def test_success_post(self):
+class TestFollowView(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="user",
+            email="user@example.com",
+            password="asdfg!@#$%12345",
+        )
+        self.following_user = User.objects.create_user(
+            username="Elon Mask",
+            email="elon@example.com",
+            password="asdfg!@#$%22345",
+        )
+        self.url = lambda username: reverse("accounts:follow", kwargs={"username": username})
+        self.client.force_login(self.user)
 
-#     def test_failure_post_with_not_exist_user(self):
+    def test_success_post(self):
+        response = self.client.post(self.url(self.following_user.username))
+        self.assertRedirects(
+            response,
+            reverse("tweets:home"),
+            status_code=302,
+            target_status_code=200,
+        )
+        self.assertTrue(
+            FriendShip.objects.filter(
+                follower=self.user,
+                followee=self.following_user,
+            ).exists()
+        )
 
-#     def test_failure_post_with_self(self):
+    def test_failure_post_with_not_exist_user(self):
+        response = self.client.post(self.url("not_exist_user"))
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(FriendShip.objects.count(), 0)
+
+    def test_failure_post_with_self(self):
+        response = self.client.post(self.url(self.user.username))
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(FriendShip.objects.count(), 0)
 
 
 # class TestUnfollowView(TestCase):
