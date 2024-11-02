@@ -289,26 +289,49 @@ class TestLogoutView(TestCase):
 
 
 class TestUserProfileView(TestCase):
-    def test_success_get(self):
-        # テストデータ準備
-        for user_index in range(3):
+    def setUp(self):
+        users = []
+        for user_index in range(4):
             user = User.objects.create_user(
                 username=f"user{user_index}",
                 email=f"user{user_index}@example.com",
                 password="asdfg!@#$%12345",
             )
+            users.append(user)
 
             for tweet_index in range(3):
                 Tweet.objects.create(user=user, body=f"tweet{tweet_index} of user{user_index}")
 
-        self.client.force_login(User.objects.get(pk=2))
+        self.user = users[0]
+        self.user.following.add(users[1], users[2])
+        self.user.followers.add(users[3])
+        self.user.save()
 
-        user = User.objects.get(pk=1)
-        tweets = Tweet.objects.filter(user=user).order_by("-created_at")
-        response = self.client.get(reverse("accounts:user_profile", kwargs={"username": user.username}))
+        self.tweets = Tweet.objects.filter(user=self.user).order_by("-created_at")
+        self.url = reverse("accounts:user_profile", kwargs={"username": self.user.username})
+
+        self.client.force_login(users[1])
+
+    def test_success_get(self):
+        response = self.client.get(self.url)
+        context = response.context
 
         self.assertEqual(response.status_code, 200)
-        self.assertQuerySetEqual(response.context["tweets"], tweets)
+
+        following_count = self.user.following.count()
+        self.assertEqual(context["following_count"], following_count)
+        self.assertContains(response, f"{following_count} フォロー中")
+        followers_count = self.user.followers.count()
+        self.assertEqual(context["followers_count"], followers_count)
+        self.assertContains(response, f"{followers_count} フォロワー")
+
+        # users[1] (loginしてるuser) は user (プロフィールのuser) をフォローしてない
+        self.assertFalse(context["is_following"])
+        self.assertContains(response, r'<button type="submit">フォロー</button>', html=True)
+
+        self.assertQuerySetEqual(context["tweets"], self.tweets)
+        for tweet in self.tweets:
+            self.assertContains(response, tweet.body, count=1)
 
 
 # class TestUserProfileEditView(TestCase):
