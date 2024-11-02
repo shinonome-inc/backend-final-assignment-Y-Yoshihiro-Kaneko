@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib.auth import SESSION_KEY, get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from accounts.models import FriendShip
 from tweets.models import Tweet
@@ -438,9 +439,67 @@ class TestUnfollowView(TestCase):
         )
 
 
-# class TestFollowingListView(TestCase):
-#     def test_success_get(self):
+class TestFollowingListView(TestCase):
+    def setUp(self):
+        self.users = []
+        for user_index in range(4):
+            user = User.objects.create_user(
+                username=f"user{user_index}",
+                email=f"user{user_index}@example.com",
+                password="asdfg!@#$%12345",
+            )
+            self.users.append(user)
+
+        self.user = self.users[0]
+        self.url = reverse("accounts:following_list", kwargs={"username": self.user.username})
+        self.expected_following = [self.users[2], self.users[1], self.users[3]]
+        for i, followee in enumerate(self.expected_following):
+            created_at = timezone.now() - timezone.timedelta(minutes=i * 10)
+            FriendShip.objects.create(follower=self.user, followee=followee, created_at=created_at)
+
+        self.client.force_login(self.users[2])
+
+    def test_success_get(self):
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        for user in self.expected_following:
+            self.assertContains(response, user.username, count=1, html=True)
+
+        # following_list は (user, created_at) のリスト
+        actual_following = [user for (user, _) in response.context["following_list"]]
+        self.assertQuerysetEqual(actual_following, self.expected_following, ordered=True)
+        self.assertTemplateUsed("accounts/following_list.html")
 
 
-# class TestFollowerListView(TestCase):
-#     def test_success_get(self):
+class TestFollowerListView(TestCase):
+    def setUp(self):
+        self.users = []
+        for user_index in range(4):
+            user = User.objects.create_user(
+                username=f"user{user_index}",
+                email=f"user{user_index}@example.com",
+                password="asdfg!@#$%12345",
+            )
+            self.users.append(user)
+
+        self.user = self.users[0]
+        self.url = reverse("accounts:follower_list", kwargs={"username": self.user.username})
+        self.expected_followers = [self.users[2], self.users[1], self.users[3]]
+        for i, follower in enumerate(self.expected_followers):
+            created_at = timezone.now() - timezone.timedelta(minutes=i * 10)
+            FriendShip.objects.create(follower=follower, followee=self.user, created_at=created_at)
+
+        self.client.force_login(self.users[2])
+
+    def test_success_get(self):
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        for follower in self.expected_followers:
+            self.assertContains(response, follower.username, count=1, html=True)
+
+        # follower_list は (user, created_at) のリスト
+        actual_followers = [user for (user, _) in response.context["follower_list"]]
+        self.assertQuerysetEqual(actual_followers, self.expected_followers, ordered=True)
+        self.assertTemplateUsed("accounts/follower_list.html")
