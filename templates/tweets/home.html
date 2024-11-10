@@ -3,10 +3,17 @@
 {% block title %}Home{% endblock %}
 
 {% block content %}
-<h1>Home画面</h1>
-{% for tweet in tweet_list %}
-{% include "tweets/tweet_overview.html" %}
-{% empty %}
-<p>最初のツイートをしよう！</p>
-{% endfor %}
+    <h1>Home画面</h1>
+    {% for tweet in tweet_list %}
+        <div>
+            {% include "tweets/tweet.html" %}
+            <div>
+                <a href="{{ tweet.get_absolute_url }}">
+                    ↑のツイートを見る
+                </a>
+            </div>
+        </div>
+    {% empty %}
+        <p>最初のツイートをしよう！</p>
+    {% endfor %}
 {% endblock %}

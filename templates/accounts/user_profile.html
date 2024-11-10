@@ -27,7 +27,12 @@
     </div>
 
     {% for tweet in tweets %}
-        {% include "tweets/tweet_overview.html" %}
+        {% include "tweets/tweet.html" %}
+        <div>
+            <a href="{{ tweet.get_absolute_url }}">
+                ↑のツイートを見る
+            </a>
+        </div>
     {% empty %}
         <p>まだツイートはありません</p>
     {% endfor %}
