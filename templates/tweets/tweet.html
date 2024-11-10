@@ -5,8 +5,27 @@
     <p>{{ tweet.body|linebreaks }}</p>
 
     <div>
-        <span>
+        <span id="tweet-like-counter" data-tweet-pk="{{ tweet.pk }}">
             {{ tweet.like_users.count }}
+        </span>
+        <span>
+            <button
+                type="button"
+                id="tweet-toggle-like-btn"
+                data-tweet-pk="{{ tweet.pk }}"
+                data-is-like-tweet="
+                    {% if user in tweet.like_users.all %}
+                        true
+                    {% else %}
+                        false
+                    {% endif %}
+                ">
+                {% if user in tweet.like_users.all %}
+                    いいねを取り消す
+                {% else %}
+                    いいねする
+                {% endif %}
+            </button>
         </span>
     </div>
     {% if tweet.user.pk == user.pk %}
