@@ -1,7 +1,9 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
+from django.shortcuts import Http404
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, DeleteView, DetailView, ListView
+from django.views.generic import CreateView, DeleteView, DetailView, ListView, View
+from django.views.generic.edit import SingleObjectMixin
 
 from tweets.models import Tweet
 
@@ -39,3 +41,41 @@ class TweetDeleteView(UserPassesTestMixin, DeleteView):
         tweet = self.get_object()
         if tweet.user == self.request.user:
             return True
+
+
+class TweetLikeView(LoginRequiredMixin, SingleObjectMixin, View):
+    model = Tweet
+
+    def like(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+        except Http404:
+            response = JsonResponse({"message": "このツイートは存在しません"})
+            response.status_code = 404
+            return response
+
+        self.object.like_users.add(request.user)
+        self.object.save()
+        return JsonResponse({"message": "ok"})
+
+    def post(self, request, *args, **kwargs):
+        return self.like(request, *args, **kwargs)
+
+
+class TweetUnlikeView(LoginRequiredMixin, SingleObjectMixin, View):
+    model = Tweet
+
+    def unlike(self, request, *args, **kwargs):
+        try:
+            self.object = self.get_object()
+        except Http404:
+            response = JsonResponse({"message": "このツイートは存在しません"})
+            response.status_code = 404
+            return response
+
+        self.object.like_users.remove(request.user)
+        self.object.save()
+        return JsonResponse({"message": "ok"})
+
+    def post(self, request, *args, **kwargs):
+        return self.unlike(request, *args, **kwargs)
