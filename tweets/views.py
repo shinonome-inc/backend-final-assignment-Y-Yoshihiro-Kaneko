@@ -10,7 +10,7 @@ from tweets.models import Tweet
 
 class HomeView(LoginRequiredMixin, ListView):
     template_name = "tweets/home.html"
-    queryset = Tweet.objects.select_related("user").order_by("-created_at")
+    queryset = Tweet.objects.select_related("user").prefetch_related("like_users").order_by("-created_at")
 
 
 class TweetCreateView(LoginRequiredMixin, CreateView):
