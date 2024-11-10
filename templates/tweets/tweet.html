@@ -1,0 +1,12 @@
+<div>
+    <div><a href="{{ tweet.user.get_absolute_url }}">{{ tweet.user.username }}</a>によるツイート</div>
+    <div>投稿日 {{ tweet.created_at }}</div>
+
+    <p>{{ tweet.body|linebreaks }}</p>
+
+    {% if tweet.user.pk == user.pk %}
+        <div>
+            <a href="{% url 'tweets:delete' pk=tweet.pk %}">削除する</a>
+        </div>
+    {% endif %}
+</div>
