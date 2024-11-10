@@ -4,6 +4,11 @@
 
     <p>{{ tweet.body|linebreaks }}</p>
 
+    <div>
+        <span>
+            {{ tweet.like_users.count }}
+        </span>
+    </div>
     {% if tweet.user.pk == user.pk %}
         <div>
             <a href="{% url 'tweets:delete' pk=tweet.pk %}">削除する</a>
