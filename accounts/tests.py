@@ -264,7 +264,6 @@ class TestLoginView(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("このフィールドは必須です。", form.errors["password"])
         self.assertNotIn(SESSION_KEY, self.client.session)
-        pass
 
 
 class TestLogoutView(TestCase):
