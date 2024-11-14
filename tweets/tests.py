@@ -100,8 +100,8 @@ class TestTweetDetailView(TestCase):
             email="testuser@example.com",
             password="asdf!@#$1234",
         )
-        self.client.force_login(user)
         tweet = Tweet.objects.create(user=user, body="This is test Tweet.")
+        self.client.force_login(user)
 
         response = self.client.get(reverse("tweets:detail", kwargs={"pk": tweet.pk}))
         self.assertContains(response, tweet.body, count=1, status_code=200)
@@ -111,7 +111,7 @@ class TestTweetDetailView(TestCase):
 
 class TestTweetDeleteView(TestCase):
     def setUp(self):
-        self.url = lambda pk: reverse("tweets:delete", kwargs={"pk": pk})
+        self.get_url = lambda pk: reverse("tweets:delete", kwargs={"pk": pk})
         self.user1 = User.objects.create_user(
             username="user1",
             email="user1@example.com",
@@ -128,7 +128,7 @@ class TestTweetDeleteView(TestCase):
 
     def test_success_post(self):
         self.client.force_login(self.user1)
-        response = self.client.post(self.url(1))
+        response = self.client.post(self.get_url(self.tweet1.pk))
 
         self.assertRedirects(
             response,
@@ -136,18 +136,19 @@ class TestTweetDeleteView(TestCase):
             status_code=302,
             target_status_code=200,
         )
-        self.assertFalse(Tweet.objects.filter(pk=1).exists())
+        self.assertFalse(Tweet.objects.filter(pk=self.tweet1.pk).exists())
+        self.assertTrue(Tweet.objects.filter(pk=self.tweet2.pk).exists())
 
     def test_failure_post_with_not_exist_tweet(self):
         self.client.force_login(self.user1)
-        response = self.client.post(self.url(100))
+        response = self.client.post(self.get_url(100))
 
         self.assertEqual(response.status_code, 404)
         self.assertEqual(len(Tweet.objects.all()), 2)
 
     def test_failure_post_with_incorrect_user(self):
         self.client.force_login(self.user1)
-        response = self.client.post(self.url(2))
+        response = self.client.post(self.get_url(self.tweet2.pk))
 
         self.assertEqual(response.status_code, 403)
         self.assertEqual(len(Tweet.objects.all()), 2)
