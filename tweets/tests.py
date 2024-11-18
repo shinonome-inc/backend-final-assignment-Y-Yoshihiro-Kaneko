@@ -8,8 +8,9 @@ User = get_user_model()
 
 
 class TestHomeView(TestCase):
-    def test_success_get(self):
-        # テストデータ準備
+    def setUp(self):
+        self.url = reverse("tweets:home")
+
         for user_index in range(3):
             user = User.objects.create_user(
                 username=f"user{user_index}",
@@ -19,7 +20,7 @@ class TestHomeView(TestCase):
 
             for tweet_index in range(3):
                 Tweet.objects.create(user=user, body=f"tweet{tweet_index} of user{user_index}")
-        all_tweets = Tweet.objects.select_related("user").order_by("-created_at").all()
+        self.all_tweets = Tweet.objects.select_related("user").order_by("-created_at").all()
 
         user = User.objects.create_user(
             username="testuser",
@@ -28,25 +29,25 @@ class TestHomeView(TestCase):
         )
         self.client.force_login(user)
 
-        response = self.client.get(reverse("tweets:home"))
-        self.assertContains(response, "によるツイート", count=len(all_tweets), status_code=200)
+    def test_success_get(self):
+        response = self.client.get(self.url)
+        self.assertContains(response, "によるツイート", count=len(self.all_tweets), status_code=200)
         self.assertTemplateUsed(response, "tweets/home.html")
-        self.assertQuerySetEqual(response.context["tweet_list"], all_tweets)
+        self.assertQuerySetEqual(response.context["tweet_list"], self.all_tweets)
 
 
 class TestTweetCreateView(TestCase):
     def setUp(self):
+        self.url = reverse("tweets:create")
         self.user = User.objects.create_user(
             username="testuser",
             email="testuser@example.com",
             password="asdf!@#$1234",
         )
-        self.url = reverse("tweets:create")
         self.client.force_login(self.user)
 
     def test_success_get(self):
         response = self.client.get(self.url)
-
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "tweets/create.html")
 
@@ -88,61 +89,60 @@ class TestTweetCreateView(TestCase):
 
 
 class TestTweetDetailView(TestCase):
-    def test_success_get(self):
+    def setUp(self):
         user = User.objects.create_user(
             username="testuser",
             email="testuser@example.com",
             password="asdf!@#$1234",
         )
-        tweet = Tweet.objects.create(user=user, body="This is test Tweet.")
+        self.tweet = Tweet.objects.create(user=user, body="This is test Tweet.")
         self.client.force_login(user)
+        self.url = reverse("tweets:detail", kwargs={"pk": self.tweet.pk})
 
-        response = self.client.get(reverse("tweets:detail", kwargs={"pk": tweet.pk}))
-        self.assertContains(response, tweet.body, count=1, status_code=200)
+    def test_success_get(self):
+        response = self.client.get(self.url)
+        self.assertContains(response, self.tweet.body, count=1, status_code=200)
         self.assertTemplateUsed(response, "tweets/detail.html")
-        self.assertQuerysetEqual([response.context["object"]], [tweet])
+        self.assertQuerysetEqual([response.context["object"]], [self.tweet])
 
 
 class TestTweetDeleteView(TestCase):
     def setUp(self):
         self.get_url = lambda pk: reverse("tweets:delete", kwargs={"pk": pk})
-        self.user1 = User.objects.create_user(
+        user = User.objects.create_user(
             username="user1",
             email="user1@example.com",
             password="asdfg!@#$%12345",
         )
-        self.tweet1 = Tweet.objects.create(user=self.user1, body="tweet of user1")
+        self.tweet = Tweet.objects.create(user=user, body="tweet of user1")
 
-        self.user2 = User.objects.create_user(
+        another_user = User.objects.create_user(
             username="user2",
             email="user2@example.com",
             password="asdfg!@#$%12345",
         )
-        self.tweet2 = Tweet.objects.create(user=self.user2, body="tweet of user2")
+        self.anothers_tweet = Tweet.objects.create(user=another_user, body="tweet of user2")
 
-        self.client.force_login(self.user1)
+        self.client.force_login(user)
 
     def test_success_post(self):
-        response = self.client.post(self.get_url(self.tweet1.pk))
-
+        response = self.client.post(self.get_url(self.tweet.pk))
         self.assertRedirects(
             response,
             reverse("tweets:home"),
             status_code=302,
             target_status_code=200,
         )
-        self.assertFalse(Tweet.objects.filter(pk=self.tweet1.pk).exists())
-        self.assertTrue(Tweet.objects.filter(pk=self.tweet2.pk).exists())
+        self.assertFalse(Tweet.objects.filter(pk=self.tweet.pk).exists())
+        self.assertTrue(Tweet.objects.filter(pk=self.anothers_tweet.pk).exists())
 
     def test_failure_post_with_not_exist_tweet(self):
         response = self.client.post(self.get_url(100))
-
         self.assertEqual(response.status_code, 404)
         self.assertEqual(len(Tweet.objects.all()), 2)
 
     def test_failure_post_with_incorrect_user(self):
-        response = self.client.post(self.get_url(self.tweet2.pk))
-
+        response = self.client.post(self.get_url(self.anothers_tweet.pk))
         self.assertEqual(response.status_code, 403)
         self.assertEqual(len(Tweet.objects.all()), 2)
 
