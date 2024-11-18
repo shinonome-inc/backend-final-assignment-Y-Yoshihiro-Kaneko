@@ -42,17 +42,15 @@ class TestTweetCreateView(TestCase):
             password="asdf!@#$1234",
         )
         self.url = reverse("tweets:create")
+        self.client.force_login(self.user)
 
     def test_success_get(self):
-        self.client.force_login(self.user)
         response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "tweets/create.html")
 
     def test_success_post(self):
-        self.client.force_login(self.user)
-
         valid_data = {"body": "Tweet"}
         response = self.client.post(self.url, valid_data)
 
@@ -65,8 +63,6 @@ class TestTweetCreateView(TestCase):
         self.assertTrue(Tweet.objects.filter(user=self.user).filter(body=valid_data["body"]).exists())
 
     def test_failure_post_with_empty_content(self):
-        self.client.force_login(self.user)
-
         invalid_data = {"body": ""}
         response = self.client.post(self.url, invalid_data)
 
@@ -79,8 +75,6 @@ class TestTweetCreateView(TestCase):
         self.assertEqual(len(Tweet.objects.all()), 0)
 
     def test_failure_post_with_too_long_content(self):
-        self.client.force_login(self.user)
-
         invalid_data = {"body": "T" * 141}
         response = self.client.post(self.url, invalid_data)
 
@@ -126,8 +120,9 @@ class TestTweetDeleteView(TestCase):
         )
         self.tweet2 = Tweet.objects.create(user=self.user2, body="tweet of user2")
 
-    def test_success_post(self):
         self.client.force_login(self.user1)
+
+    def test_success_post(self):
         response = self.client.post(self.get_url(self.tweet1.pk))
 
         self.assertRedirects(
@@ -140,14 +135,12 @@ class TestTweetDeleteView(TestCase):
         self.assertTrue(Tweet.objects.filter(pk=self.tweet2.pk).exists())
 
     def test_failure_post_with_not_exist_tweet(self):
-        self.client.force_login(self.user1)
         response = self.client.post(self.get_url(100))
 
         self.assertEqual(response.status_code, 404)
         self.assertEqual(len(Tweet.objects.all()), 2)
 
     def test_failure_post_with_incorrect_user(self):
-        self.client.force_login(self.user1)
         response = self.client.post(self.get_url(self.tweet2.pk))
 
         self.assertEqual(response.status_code, 403)
