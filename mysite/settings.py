@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
+import sys
 from pathlib import Path
 
 from django.urls import reverse_lazy
@@ -132,3 +133,17 @@ AUTH_USER_MODEL = "accounts.User"
 LOGIN_URL = reverse_lazy("accounts:login")
 LOGIN_REDIRECT_URL = reverse_lazy("tweets:home")
 LOGOUT_REDIRECT_URL = reverse_lazy("accounts:login")
+
+
+# テスト実行する際はここをFalseにすればOK。従って全てコメントアウトする必要なし
+SQL_DEBUG = DEBUG and "test" not in sys.argv
+if SQL_DEBUG:
+
+    def show_toolbar(request):
+        return True
+
+    INSTALLED_APPS += ("debug_toolbar",)
+    MIDDLEWARE += ("debug_toolbar.middleware.DebugToolbarMiddleware",)
+    DEBUG_TOOLBAR_CONFIG = {
+        "SHOW_TOOLBAR_CALLBACK": show_toolbar,
+    }

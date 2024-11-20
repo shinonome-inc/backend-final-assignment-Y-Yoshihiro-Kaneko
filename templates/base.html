@@ -13,6 +13,15 @@
                 <li><a href="{% url 'welcome:welcome' %}">Twitter Clone</a></li>
                 {% if user.is_authenticated is True %}
                 <li>
+                    <a href="{% url 'tweets:home' %}">ホーム</a>
+                </li>
+                <li>
+                    <a href="{% url 'tweets:create' %}">ツイートする</a>
+                </li>
+                <li>
+                    <a href="{{ user.get_absolute_url }}">プロフィール</a>
+                </li>
+                <li>
                     <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}
                         <button type="submit">Logout</button>
                     </form>

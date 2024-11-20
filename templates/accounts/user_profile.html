@@ -3,5 +3,12 @@
 {% block title %}Profile{% endblock %}
 
 {% block content %}
-<h2>{{ user_profile.username }}</h2>
+<h1>{{ user_profile.username }}</h1>
+
+{% for tweet in tweets %}
+{% include "tweets/tweet_overview.html" %}
+{% empty %}
+<p>まだツイートはありません</p>
+{% endfor %}
+
 {% endblock %}

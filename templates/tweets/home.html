@@ -4,4 +4,9 @@
 
 {% block content %}
 <h1>Home画面</h1>
+{% for tweet in tweet_list %}
+{% include "tweets/tweet_overview.html" %}
+{% empty %}
+<p>最初のツイートをしよう！</p>
+{% endfor %}
 {% endblock %}

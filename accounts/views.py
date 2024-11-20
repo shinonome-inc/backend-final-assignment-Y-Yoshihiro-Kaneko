@@ -3,6 +3,8 @@ from django.contrib.auth import authenticate, get_user_model, login
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import CreateView, DetailView
 
+from tweets.models import Tweet
+
 from .forms import SignupForm
 
 User = get_user_model()
@@ -29,3 +31,9 @@ class UserProfileView(LoginRequiredMixin, DetailView):
     slug_url_kwarg = "username"
     context_object_name = "user_profile"
     template_name = "accounts/user_profile.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = context["user_profile"]
+        context["tweets"] = Tweet.objects.select_related("user").filter(user=user).order_by("-created_at")
+        return context
