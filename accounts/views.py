@@ -49,7 +49,7 @@ class FollowView(LoginRequiredMixin, SingleObjectMixin, View):
     model = User
     slug_field = "username"
     slug_url_kwarg = "username"
-    next_page = reverse_lazy("tweets:home")
+    redirect_url = reverse_lazy("tweets:home")
 
     def post(self, request, *args, **kwargs):
         try:
@@ -65,14 +65,14 @@ class FollowView(LoginRequiredMixin, SingleObjectMixin, View):
 
         request.user.following.add(target_user)
         request.user.save()
-        return HttpResponseRedirect(self.next_page)
+        return HttpResponseRedirect(self.redirect_url)
 
 
 class UnFollowView(LoginRequiredMixin, SingleObjectMixin, View):
     model = User
     slug_field = "username"
     slug_url_kwarg = "username"
-    next_page = reverse_lazy("tweets:home")
+    redirect_url = reverse_lazy("tweets:home")
 
     def post(self, request, *args, **kwargs):
         try:
@@ -88,7 +88,7 @@ class UnFollowView(LoginRequiredMixin, SingleObjectMixin, View):
 
         request.user.following.remove(target_user)
         request.user.save()
-        return HttpResponseRedirect(self.next_page)
+        return HttpResponseRedirect(self.redirect_url)
 
 
 class FollowingListView(LoginRequiredMixin, DetailView):
