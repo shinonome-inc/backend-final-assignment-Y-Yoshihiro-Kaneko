@@ -25,3 +25,6 @@ class FriendShip(models.Model):
     # フォローされている人
     followee = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="+", on_delete=models.CASCADE)
     created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["follower", "followee"], name="unique_friendship")]
