@@ -2,7 +2,9 @@ from django.conf import settings
 from django.contrib.auth import SESSION_KEY, get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
+from accounts.models import FriendShip
 from tweets.models import Tweet
 
 User = get_user_model()
@@ -289,26 +291,49 @@ class TestLogoutView(TestCase):
 
 
 class TestUserProfileView(TestCase):
-    def test_success_get(self):
-        # テストデータ準備
-        for user_index in range(3):
+    def setUp(self):
+        users = []
+        for user_index in range(4):
             user = User.objects.create_user(
                 username=f"user{user_index}",
                 email=f"user{user_index}@example.com",
                 password="asdfg!@#$%12345",
             )
+            users.append(user)
 
             for tweet_index in range(3):
                 Tweet.objects.create(user=user, body=f"tweet{tweet_index} of user{user_index}")
 
-        self.client.force_login(User.objects.get(pk=2))
+        self.user = users[0]
+        self.user.following.add(users[1], users[2])
+        self.user.followers.add(users[3])
+        self.user.save()
 
-        user = User.objects.get(pk=1)
-        tweets = Tweet.objects.filter(user=user).order_by("-created_at")
-        response = self.client.get(reverse("accounts:user_profile", kwargs={"username": user.username}))
+        self.tweets = Tweet.objects.filter(user=self.user).order_by("-created_at")
+        self.url = reverse("accounts:user_profile", kwargs={"username": self.user.username})
+
+        self.client.force_login(users[1])
+
+    def test_success_get(self):
+        response = self.client.get(self.url)
+        context = response.context
 
         self.assertEqual(response.status_code, 200)
-        self.assertQuerySetEqual(response.context["tweets"], tweets)
+
+        following_count = self.user.following.count()
+        self.assertEqual(context["following_count"], following_count)
+        self.assertContains(response, f"{following_count} フォロー中")
+        followers_count = self.user.followers.count()
+        self.assertEqual(context["followers_count"], followers_count)
+        self.assertContains(response, f"{followers_count} フォロワー")
+
+        # users[1] (loginしてるuser) は user (プロフィールのuser) をフォローしてない
+        self.assertFalse(context["is_following"])
+        self.assertContains(response, r'<button type="submit">フォロー</button>', html=True)
+
+        self.assertQuerySetEqual(context["tweets"], self.tweets)
+        for tweet in self.tweets:
+            self.assertContains(response, tweet.body, count=1)
 
 
 # class TestUserProfileEditView(TestCase):
@@ -321,25 +346,160 @@ class TestUserProfileView(TestCase):
 #     def test_failure_post_with_incorrect_user(self):
 
 
-# class TestFollowView(TestCase):
-#     def test_success_post(self):
+class TestFollowView(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="user",
+            email="user@example.com",
+            password="asdfg!@#$%12345",
+        )
+        self.following_user = User.objects.create_user(
+            username="Elon Mask",
+            email="elon@example.com",
+            password="asdfg!@#$%22345",
+        )
+        self.url = lambda username: reverse("accounts:follow", kwargs={"username": username})
+        self.client.force_login(self.user)
 
-#     def test_failure_post_with_not_exist_user(self):
+    def test_success_post(self):
+        response = self.client.post(self.url(self.following_user.username))
+        self.assertRedirects(
+            response,
+            reverse("tweets:home"),
+            status_code=302,
+            target_status_code=200,
+        )
+        self.assertTrue(
+            FriendShip.objects.filter(
+                follower=self.user,
+                followee=self.following_user,
+            ).exists()
+        )
 
-#     def test_failure_post_with_self(self):
+    def test_failure_post_with_not_exist_user(self):
+        response = self.client.post(self.url("not_exist_user"))
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(FriendShip.objects.count(), 0)
+
+    def test_failure_post_with_self(self):
+        response = self.client.post(self.url(self.user.username))
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(FriendShip.objects.count(), 0)
 
 
-# class TestUnfollowView(TestCase):
-#     def test_success_post(self):
+class TestUnfollowView(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="user",
+            email="user@example.com",
+            password="asdfg!@#$%12345",
+        )
+        self.following_user = User.objects.create_user(
+            username="Elon Mask",
+            email="elon@example.com",
+            password="asdfg!@#$%22345",
+        )
+        self.user.following.add(self.following_user)
+        self.url = lambda username: reverse("accounts:unfollow", kwargs={"username": username})
+        self.client.force_login(self.user)
 
-#     def test_failure_post_with_not_exist_tweet(self):
+    def test_success_post(self):
+        response = self.client.post(self.url(self.following_user.username))
+        self.assertRedirects(
+            response,
+            reverse("tweets:home"),
+            status_code=302,
+            target_status_code=200,
+        )
+        self.assertFalse(
+            FriendShip.objects.filter(
+                follower=self.user,
+                followee=self.following_user,
+            ).exists()
+        )
 
-#     def test_failure_post_with_incorrect_user(self):
+    def test_failure_post_with_not_exist_user(self):
+        response = self.client.post(self.url("not_exist_user"))
+        self.assertEqual(response.status_code, 404)
+        self.assertTrue(
+            FriendShip.objects.filter(
+                follower=self.user,
+                followee=self.following_user,
+            ).exists()
+        )
+
+    def test_failure_post_with_self(self):
+        response = self.client.post(self.url(self.user.username))
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(
+            FriendShip.objects.filter(
+                follower=self.user,
+                followee=self.following_user,
+            ).exists()
+        )
 
 
-# class TestFollowingListView(TestCase):
-#     def test_success_get(self):
+class TestFollowingListView(TestCase):
+    def setUp(self):
+        self.users = []
+        for user_index in range(4):
+            user = User.objects.create_user(
+                username=f"user{user_index}",
+                email=f"user{user_index}@example.com",
+                password="asdfg!@#$%12345",
+            )
+            self.users.append(user)
+
+        self.user = self.users[0]
+        self.url = reverse("accounts:following_list", kwargs={"username": self.user.username})
+        self.expected_following = [self.users[2], self.users[1], self.users[3]]
+        for i, followee in enumerate(self.expected_following):
+            created_at = timezone.now() - timezone.timedelta(minutes=i * 10)
+            FriendShip.objects.create(follower=self.user, followee=followee, created_at=created_at)
+
+        self.client.force_login(self.users[2])
+
+    def test_success_get(self):
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        for user in self.expected_following:
+            self.assertContains(response, user.username, count=1, html=True)
+
+        # following_list は (user, created_at) のリスト
+        actual_following = [user for (user, _) in response.context["following_list"]]
+        self.assertQuerysetEqual(actual_following, self.expected_following, ordered=True)
+        self.assertTemplateUsed("accounts/following_list.html")
 
 
-# class TestFollowerListView(TestCase):
-#     def test_success_get(self):
+class TestFollowerListView(TestCase):
+    def setUp(self):
+        self.users = []
+        for user_index in range(4):
+            user = User.objects.create_user(
+                username=f"user{user_index}",
+                email=f"user{user_index}@example.com",
+                password="asdfg!@#$%12345",
+            )
+            self.users.append(user)
+
+        self.user = self.users[0]
+        self.url = reverse("accounts:follower_list", kwargs={"username": self.user.username})
+        self.expected_followers = [self.users[2], self.users[1], self.users[3]]
+        for i, follower in enumerate(self.expected_followers):
+            created_at = timezone.now() - timezone.timedelta(minutes=i * 10)
+            FriendShip.objects.create(follower=follower, followee=self.user, created_at=created_at)
+
+        self.client.force_login(self.users[2])
+
+    def test_success_get(self):
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 200)
+        for follower in self.expected_followers:
+            self.assertContains(response, follower.username, count=1, html=True)
+
+        # follower_list は (user, created_at) のリスト
+        actual_followers = [user for (user, _) in response.context["follower_list"]]
+        self.assertQuerysetEqual(actual_followers, self.expected_followers, ordered=True)
+        self.assertTemplateUsed("accounts/follower_list.html")

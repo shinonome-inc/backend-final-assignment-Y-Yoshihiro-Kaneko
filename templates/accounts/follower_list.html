@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}フォロワー{% endblock %}
+
+{% block content %}
+    <h1>フォロワー一覧</h1>
+
+    <ul>
+        {% for user_profile, followed_at in follower_list %}
+            <li>
+                <a href="{{ user_profile.get_absolute_url }}">{{ user_profile.username }}</a>
+                ({{ followed_at }})
+            </li>
+        {% endfor %}
+    </ul>
+{% endblock %}
