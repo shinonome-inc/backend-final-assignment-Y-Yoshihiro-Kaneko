@@ -41,7 +41,12 @@ class UserProfileView(LoginRequiredMixin, DetailView):
         context["is_following"] = self.request.user.following.filter(pk=user.pk).exists()
         context["following_count"] = user.following.count()
         context["followers_count"] = user.followers.count()
-        context["tweets"] = Tweet.objects.select_related("user").filter(user=user).order_by("-created_at")
+        context["tweets"] = (
+            Tweet.objects.select_related("user")
+            .prefetch_related("like_users")
+            .filter(user=user)
+            .order_by("-created_at")
+        )
         return context
 
 
